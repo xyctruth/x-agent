@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from x_agent.api.v1.router import router as api_v1_router
 from x_agent.core.config import get_settings
@@ -27,6 +28,13 @@ def create_app() -> FastAPI:
         title=settings.service_name,
         version=settings.service_version,
         lifespan=lifespan,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_origins),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     app.state.agent_session_repository = InMemoryAgentSessionRepository()
     app.state.agent_message_repository = InMemoryAgentMessageRepository()

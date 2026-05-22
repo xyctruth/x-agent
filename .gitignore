@@ -206,6 +206,12 @@ tempCodeRunnerFile.py
 # Ruff stuff:
 .ruff_cache/
 
+# Frontend
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+web/tsconfig.*.tsbuildinfo
+
 # PyPI configuration file
 .pypirc
 

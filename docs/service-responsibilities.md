@@ -33,6 +33,14 @@
 
 第一版只接收并保存用户消息，不触发 LLM 调用，也不生成 assistant 回复。该能力用于先打通 Web Client 和后端会话上下文的交互基础。
 
+### Web Client
+
+项目包含一个独立的前端 Web Client，用于验证客户端层和 API 层的交互：
+
+- 使用 Vite、React 和 TypeScript 构建。
+- 默认通过 CORS 访问后端 API。
+- 第一版支持创建 Agent 会话、发送用户消息和查询消息列表。
+
 ## 规划职责
 
 ### Agent 任务执行

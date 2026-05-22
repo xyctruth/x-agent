@@ -48,6 +48,16 @@ uv run mypy src tests
 uv run pytest
 ```
 
+启动前端：
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+前端默认连接 `http://127.0.0.1:8000`，可以通过 `VITE_X_AGENT_API_BASE_URL` 覆盖。
+
 ## 当前 API
 
 - `GET /healthz`：存活检查和基础服务元数据。
