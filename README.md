@@ -53,3 +53,7 @@ uv run pytest
 - `GET /healthz`：存活检查和基础服务元数据。
 - `GET /readyz`：服务就绪检查。
 - `GET /api/v1/service-info`：服务职责和支持的架构分层。
+- `POST /api/v1/agent-sessions`：创建 Agent 会话。
+- `GET /api/v1/agent-sessions/{session_id}`：查询 Agent 会话。
+- `POST /api/v1/agent-sessions/{session_id}/messages`：在会话下创建用户消息。
+- `GET /api/v1/agent-sessions/{session_id}/messages`：查询会话消息列表。

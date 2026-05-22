@@ -6,6 +6,12 @@ from fastapi import FastAPI
 from x_agent.api.v1.router import router as api_v1_router
 from x_agent.core.config import get_settings
 from x_agent.core.logging import configure_logging
+from x_agent.persistence.in_memory_agent_message_repository import (
+    InMemoryAgentMessageRepository,
+)
+from x_agent.persistence.in_memory_agent_session_repository import (
+    InMemoryAgentSessionRepository,
+)
 
 
 @asynccontextmanager
@@ -22,6 +28,8 @@ def create_app() -> FastAPI:
         version=settings.service_version,
         lifespan=lifespan,
     )
+    app.state.agent_session_repository = InMemoryAgentSessionRepository()
+    app.state.agent_message_repository = InMemoryAgentMessageRepository()
     app.include_router(api_v1_router)
     return app
 

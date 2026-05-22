@@ -15,11 +15,25 @@
 
 服务暴露 `GET /api/v1/service-info`，用于描述当前服务职责和支持的架构分层。
 
-## 规划职责
-
 ### Agent 会话管理
 
-创建、查询和管理 Agent 会话，包括生命周期状态和元数据。
+服务支持创建和查询 Agent 会话：
+
+- `POST /api/v1/agent-sessions`：创建 Agent 会话。
+- `GET /api/v1/agent-sessions/{session_id}`：查询指定 Agent 会话。
+
+第一版使用进程内内存 repository，用于验证业务边界和 API 契约。该存储不是最终生产持久化方案，后续会替换为数据库 repository。
+
+### Agent 消息管理
+
+服务支持在 Agent 会话下创建和查询消息：
+
+- `POST /api/v1/agent-sessions/{session_id}/messages`：在指定会话下创建用户消息。
+- `GET /api/v1/agent-sessions/{session_id}/messages`：查询指定会话的消息列表。
+
+第一版只接收并保存用户消息，不触发 LLM 调用，也不生成 assistant 回复。该能力用于先打通 Web Client 和后端会话上下文的交互基础。
+
+## 规划职责
 
 ### Agent 任务执行
 
@@ -32,4 +46,3 @@
 ### Provider 抽象
 
 在稳定的应用端口后面支持多个 LLM Provider。
-

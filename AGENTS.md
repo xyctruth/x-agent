@@ -13,11 +13,14 @@
 
 Codex 按需读取 `docs/`，不默认全量读取所有文档。
 
+- 非平凡需求开始前：必须读取最新的 `AGENTS.md` 和 `docs/development-workflow.md`。
 - 新功能需求：读取 `docs/architecture.md` 和 `docs/service-responsibilities.md`。
 - 流程、质量门或协作方式调整：读取 `docs/development-workflow.md`。
 - 架构调整或重要技术选型：读取 `docs/architecture.md`，必要时新增或更新 `docs/adr/`。
 - 业务职责变化：读取并更新 `docs/service-responsibilities.md`。
 - 小范围修复、纯测试调整或格式修复：不强制读取 `docs/`。
+
+如果相关项目知识文件相比本轮已知上下文可能已经更新，必须读取最新内容；如果无法可靠判断是否更新，也必须读取最新内容。
 
 ## 文档索引
 
@@ -25,4 +28,3 @@ Codex 按需读取 `docs/`，不默认全量读取所有文档。
 - `docs/development-workflow.md`：研发流程、质量检查、测试和自 review 规则。
 - `docs/service-responsibilities.md`：当前服务职责、规划职责和业务边界。
 - `docs/adr/`：重要架构决策记录。
-
