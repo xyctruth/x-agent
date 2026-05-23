@@ -21,6 +21,7 @@ from x_agent.application.agent_sessions import (
     AgentSessionService,
     CreateAgentSessionCommand,
 )
+from x_agent.application.llm import LLMProviderError
 
 router = APIRouter(prefix="/api/v1/agent-sessions", tags=["agent-sessions"])
 
@@ -93,6 +94,11 @@ async def create_agent_message(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Agent session not found",
+        ) from exc
+    except LLMProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Agent execution failed",
         ) from exc
     return AgentMessageSendResponse(
         messages=tuple(AgentMessageResponse.model_validate(message) for message in messages),

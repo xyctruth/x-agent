@@ -17,6 +17,7 @@ class ServiceInfoService:
                 "agent session management",
                 "agent message management",
                 "agent execution",
+                "llm provider integration",
             ),
             layers=(
                 "client",

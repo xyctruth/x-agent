@@ -1,6 +1,12 @@
 from fastapi.testclient import TestClient
 
+from x_agent.application.llm import LLMProviderError
 from x_agent.main import create_app
+
+
+class FailingAgentExecutor:
+    def execute(self, message: object) -> object:
+        raise LLMProviderError("provider unavailable")
 
 
 def test_create_agent_message_returns_created_user_and_assistant_messages() -> None:
@@ -80,3 +86,18 @@ def test_list_agent_messages_returns_404_when_session_missing() -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Agent session not found"}
+
+
+def test_create_agent_message_returns_502_when_agent_execution_fails() -> None:
+    app = create_app()
+    app.state.agent_executor = FailingAgentExecutor()
+    client = TestClient(app)
+    session_id = client.post("/api/v1/agent-sessions", json={}).json()["id"]
+
+    response = client.post(
+        f"/api/v1/agent-sessions/{session_id}/messages",
+        json={"content": "你好"},
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {"detail": "Agent execution failed"}

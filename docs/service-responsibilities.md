@@ -31,7 +31,12 @@
 - `POST /api/v1/agent-sessions/{session_id}/messages`：在指定会话下发送用户消息，并返回本次新增的 user/assistant 消息。
 - `GET /api/v1/agent-sessions/{session_id}/messages`：查询指定会话的消息列表。
 
-当前版本使用确定性的 SimpleAgent 生成 assistant 回复，不触发真实 LLM 调用。该能力用于先打通 Web Client、API、Application、Agent、Execution 和 Persistence 的完整执行链路。
+当前版本支持两种 Agent 回复模式：
+
+- 默认使用确定性的 SimpleAgent，便于本地开发和测试。
+- 配置 `X_AGENT_LLM_PROVIDER=qwen` 时，通过 OpenAI 兼容接口调用千问模型。
+
+该能力用于打通 Web Client、API、Application、Agent、Execution、Infrastructure 和 Persistence 的完整执行链路。
 
 ### Web Client
 
@@ -53,4 +58,9 @@
 
 ### Provider 抽象
 
-在稳定的应用端口后面支持多个 LLM Provider。
+在稳定的应用端口后面支持多个 LLM Provider。当前已提供千问 OpenAI 兼容 Provider 的第一版适配：
+
+- 使用 `X_AGENT_LLM_PROVIDER=qwen` 启用。
+- 使用 `X_AGENT_QWEN_API_KEY` 或 `DASHSCOPE_API_KEY` 提供 API Key。
+- 默认模型为 `qwen-plus`。
+- API Key 必须通过环境变量注入，不能写入代码、文档或提交历史。

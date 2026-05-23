@@ -58,6 +58,24 @@ npm run dev
 
 前端默认连接 `http://127.0.0.1:8000`，可以通过 `VITE_X_AGENT_API_BASE_URL` 覆盖。
 
+### 接入千问
+
+默认使用确定性的 SimpleAgent。接入千问时通过环境变量启用，不要把 API Key 写入代码或文档：
+
+```bash
+export X_AGENT_LLM_PROVIDER=qwen
+export X_AGENT_QWEN_API_KEY="你的百炼 API Key"
+export X_AGENT_QWEN_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+export X_AGENT_QWEN_MODEL="qwen-plus"
+uv run fastapi dev src/x_agent/main.py
+```
+
+也兼容官方环境变量：
+
+```bash
+export DASHSCOPE_API_KEY="你的百炼 API Key"
+```
+
 ## 当前 API
 
 - `GET /healthz`：存活检查和基础服务元数据。

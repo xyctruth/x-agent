@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.115.0",
+    "httpx>=0.28.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",
     "structlog>=24.4.0",
@@ -14,7 +15,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "httpx>=0.28.0",
     "mypy>=1.14.0",
     "pytest>=8.3.0",
     "pytest-cov>=6.0.0",
