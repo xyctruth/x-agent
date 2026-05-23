@@ -76,6 +76,16 @@ uv run fastapi dev src/x_agent/main.py
 export DASHSCOPE_API_KEY="你的百炼 API Key"
 ```
 
+### 初始化 Mock MySQL 业务库
+
+项目提供本地 MySQL 8.0 mock 业务库，用于测试自然语言转统计 SQL、后续只读 SQL 执行和数据分析能力：
+
+```bash
+bash scripts/init_mock_mysql.sh
+```
+
+默认连接 `127.0.0.1:3306`，用户和密码均为 `root`，数据库名为 `x_agent_mock_biz`。可以通过 `MYSQL_HOST`、`MYSQL_PORT`、`MYSQL_USER`、`MYSQL_PASSWORD`、`MYSQL_DATABASE` 环境变量覆盖。
+
 ## 当前 API
 
 - `GET /healthz`：存活检查和基础服务元数据。
