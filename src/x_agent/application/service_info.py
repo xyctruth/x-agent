@@ -19,6 +19,7 @@ class ServiceInfoService:
                 "agent execution",
                 "llm provider integration",
                 "streaming agent responses",
+                "agentic rag nl2sql generation",
             ),
             layers=(
                 "client",

@@ -49,7 +49,7 @@ uv run ruff format .
 
 ## Python 规范
 
-- 使用 Python 3.13+。
+- 使用 Python 3.12+。
 - 业务代码必须提供类型标注。
 - API Schema 和配置 Schema 优先使用 Pydantic。
 - 使用结构化日志，不使用 `print` 输出业务日志。

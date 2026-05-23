@@ -3,12 +3,13 @@ name = "x-agent"
 version = "0.1.0"
 description = "Production-grade learning project for a highly available Python AI agent service."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.115.0",
     "httpx>=0.28.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",
+    "sqlglot>=26.0.0",
     "structlog>=24.4.0",
     "uvicorn[standard]>=0.34.0",
 ]
@@ -40,7 +41,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
+target-version = "py312"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
@@ -75,7 +76,7 @@ ignore = [
 "tests/**/*.py" = ["PLR2004"]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.12"
 strict = true
 warn_unreachable = true
 plugins = ["pydantic.mypy"]

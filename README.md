@@ -86,3 +86,4 @@ export DASHSCOPE_API_KEY="你的百炼 API Key"
 - `POST /api/v1/agent-sessions/{session_id}/messages`：在会话下发送用户消息，并返回本次新增的 user/assistant 消息。
 - `POST /api/v1/agent-sessions/{session_id}/messages/stream`：在会话下发送用户消息，并通过 SSE 流式返回 assistant 生成过程和最终消息。
 - `GET /api/v1/agent-sessions/{session_id}/messages`：查询会话消息列表。
+- `POST /api/v1/nl2sql/generate`：基于 Agentic RAG 检索业务知识并生成只读统计 SQL，返回检索计划、上下文、SQL 和校验结果。

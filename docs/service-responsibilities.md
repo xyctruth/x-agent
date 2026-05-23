@@ -39,6 +39,15 @@
 
 该能力用于打通 Web Client、API、Application、Agent、Execution、Infrastructure 和 Persistence 的完整执行链路。
 
+### 自然语言转统计 SQL
+
+服务支持通过 Agentic RAG 模式生成只读统计 SQL：
+
+- `POST /api/v1/nl2sql/generate`：接收自然语言问题，返回检索计划、召回的业务知识、生成 SQL 和 SQL 校验结果。
+- Agent 会按需检索表结构、指标定义、业务术语和历史相似查询样例，构建增强上下文。
+- 当前版本只负责生成和校验 SQL，不执行真实业务数据库查询。
+- 第一版使用进程内 demo 知识库，后续可替换为数据字典、向量检索、历史查询样本库或真实数据库 metadata。
+
 ### Web Client
 
 项目包含一个独立的前端 Web Client，用于验证客户端层和 API 层的交互：

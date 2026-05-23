@@ -15,4 +15,5 @@ def test_get_service_info_returns_service_metadata() -> None:
     assert "agent execution" in info.responsibilities
     assert "llm provider integration" in info.responsibilities
     assert "streaming agent responses" in info.responsibilities
+    assert "agentic rag nl2sql generation" in info.responsibilities
     assert "agent" in info.layers
