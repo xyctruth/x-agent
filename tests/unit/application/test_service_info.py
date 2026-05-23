@@ -12,4 +12,5 @@ def test_get_service_info_returns_service_metadata() -> None:
     assert info.version == "9.9.9"
     assert "service health" in info.responsibilities
     assert "agent session management" in info.responsibilities
+    assert "agent execution" in info.responsibilities
     assert "agent" in info.layers

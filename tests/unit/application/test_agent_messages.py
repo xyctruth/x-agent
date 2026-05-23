@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from x_agent.agent.simple_agent import SimpleAgent
 from x_agent.application.agent_messages import (
     AgentMessageService,
     CreateAgentMessageCommand,
@@ -12,6 +13,7 @@ from x_agent.application.agent_sessions import (
     CreateAgentSessionCommand,
 )
 from x_agent.domain.agent_message import AgentMessageRole
+from x_agent.execution.agent_executor import AgentExecutor
 from x_agent.persistence.in_memory_agent_message_repository import (
     InMemoryAgentMessageRepository,
 )
@@ -48,6 +50,34 @@ def test_create_user_message_persists_message_for_existing_session() -> None:
     assert message.role is AgentMessageRole.USER
     assert message.created_at == now
     assert message_repository.list_by_session_id("session-1") == (message,)
+
+
+def test_send_user_message_persists_user_and_assistant_messages() -> None:
+    session_repository = InMemoryAgentSessionRepository()
+    message_repository = InMemoryAgentMessageRepository()
+    AgentSessionService(
+        repository=session_repository,
+        id_factory=lambda: "session-1",
+    ).create_session(CreateAgentSessionCommand())
+    message_ids = iter(("message-1", "message-2"))
+    message_service = AgentMessageService(
+        session_repository=session_repository,
+        message_repository=message_repository,
+        agent_executor=AgentExecutor(agent=SimpleAgent()),
+        id_factory=lambda: next(message_ids),
+    )
+
+    messages = message_service.send_user_message(
+        CreateAgentMessageCommand(session_id="session-1", content="你好"),
+    )
+
+    assert [message.role for message in messages] == [
+        AgentMessageRole.USER,
+        AgentMessageRole.ASSISTANT,
+    ]
+    assert messages[0].content == "你好"
+    assert "你好" in messages[1].content
+    assert message_repository.list_by_session_id("session-1") == messages
 
 
 def test_create_user_message_raises_when_session_does_not_exist() -> None:

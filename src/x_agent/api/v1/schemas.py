@@ -55,3 +55,7 @@ class AgentMessageResponse(BaseModel):
     content: str
     created_at: datetime
     metadata: dict[str, str]
+
+
+class AgentMessageSendResponse(BaseModel):
+    messages: tuple[AgentMessageResponse, ...]

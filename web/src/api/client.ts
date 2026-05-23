@@ -18,6 +18,10 @@ export type AgentMessage = {
   metadata: Record<string, string>;
 };
 
+type AgentMessageSendResponse = {
+  messages: AgentMessage[];
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     ...options,
@@ -52,19 +56,22 @@ export async function createAgentSession(title: string): Promise<AgentSession> {
 export async function createAgentMessage(
   sessionId: string,
   content: string
-): Promise<AgentMessage> {
-  return request<AgentMessage>(`/api/v1/agent-sessions/${sessionId}/messages`, {
-    method: "POST",
-    body: JSON.stringify({
-      content,
-      metadata: {
-        client: "web"
-      }
-    })
-  });
+): Promise<AgentMessage[]> {
+  const response = await request<AgentMessageSendResponse>(
+    `/api/v1/agent-sessions/${sessionId}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        content,
+        metadata: {
+          client: "web"
+        }
+      })
+    }
+  );
+  return response.messages;
 }
 
 export async function listAgentMessages(sessionId: string): Promise<AgentMessage[]> {
   return request<AgentMessage[]>(`/api/v1/agent-sessions/${sessionId}/messages`);
 }
-

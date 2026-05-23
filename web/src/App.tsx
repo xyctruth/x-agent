@@ -4,8 +4,7 @@ import {
   AgentMessage,
   AgentSession,
   createAgentMessage,
-  createAgentSession,
-  listAgentMessages
+  createAgentSession
 } from "./api/client";
 
 function buildSessionTitle(content: string): string {
@@ -47,9 +46,8 @@ export function App() {
         setSession(activeSession);
       }
 
-      await createAgentMessage(activeSession.id, content);
-      const nextMessages = await listAgentMessages(activeSession.id);
-      setMessages(nextMessages);
+      const createdMessages = await createAgentMessage(activeSession.id, content);
+      setMessages((currentMessages) => [...currentMessages, ...createdMessages]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "发送失败");
       setDraft(content);
@@ -94,7 +92,7 @@ export function App() {
           {messages.length === 0 ? (
             <div className="empty-state">
               <h2>开始一次 Agent 会话</h2>
-              <p>第一条消息会创建 session，并保存为 user message。</p>
+              <p>第一条消息会创建 session，并返回一条确定性的 assistant 回复。</p>
             </div>
           ) : (
             messages.map((message) => (
@@ -129,4 +127,3 @@ export function App() {
     </main>
   );
 }
-

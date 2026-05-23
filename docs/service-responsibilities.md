@@ -26,12 +26,12 @@
 
 ### Agent 消息管理
 
-服务支持在 Agent 会话下创建和查询消息：
+服务支持在 Agent 会话下发送和查询消息：
 
-- `POST /api/v1/agent-sessions/{session_id}/messages`：在指定会话下创建用户消息。
+- `POST /api/v1/agent-sessions/{session_id}/messages`：在指定会话下发送用户消息，并返回本次新增的 user/assistant 消息。
 - `GET /api/v1/agent-sessions/{session_id}/messages`：查询指定会话的消息列表。
 
-第一版只接收并保存用户消息，不触发 LLM 调用，也不生成 assistant 回复。该能力用于先打通 Web Client 和后端会话上下文的交互基础。
+当前版本使用确定性的 SimpleAgent 生成 assistant 回复，不触发真实 LLM 调用。该能力用于先打通 Web Client、API、Application、Agent、Execution 和 Persistence 的完整执行链路。
 
 ### Web Client
 
@@ -39,13 +39,13 @@
 
 - 使用 Vite、React 和 TypeScript 构建。
 - 默认通过 CORS 访问后端 API。
-- 第一版支持创建 Agent 会话、发送用户消息和查询消息列表。
+- 当前版本支持创建 Agent 会话、发送用户消息、展示确定性 assistant 回复和查询消息列表。
 
 ## 规划职责
 
 ### Agent 任务执行
 
-接收用户任务、规划执行步骤、调用工具，并返回归一化结果。
+接收用户任务、规划执行步骤、调用工具，并返回归一化结果。当前版本只完成确定性 SimpleAgent 回复，后续会接入真实 LLM Provider、任务状态和工具调用。
 
 ### 持久化会话状态
 

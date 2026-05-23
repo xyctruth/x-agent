@@ -36,3 +36,22 @@ class AgentMessage:
             created_at=now or datetime.now(UTC),
             metadata=metadata or {},
         )
+
+    @classmethod
+    def create_assistant_message(
+        cls,
+        *,
+        message_id: str,
+        session_id: str,
+        content: str,
+        metadata: dict[str, str] | None = None,
+        now: datetime | None = None,
+    ) -> "AgentMessage":
+        return cls(
+            id=message_id,
+            session_id=session_id,
+            role=AgentMessageRole.ASSISTANT,
+            content=content,
+            created_at=now or datetime.now(UTC),
+            metadata=metadata or {},
+        )

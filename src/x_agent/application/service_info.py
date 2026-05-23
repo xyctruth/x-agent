@@ -16,6 +16,7 @@ class ServiceInfoService:
                 "service metadata",
                 "agent session management",
                 "agent message management",
+                "agent execution",
             ),
             layers=(
                 "client",

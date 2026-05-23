@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from x_agent.api.v1.schemas import (
     AgentMessageCreateRequest,
     AgentMessageResponse,
+    AgentMessageSendResponse,
     AgentSessionCreateRequest,
     AgentSessionResponse,
 )
 from x_agent.application.agent_messages import (
+    AgentExecutor,
     AgentMessageRepository,
     AgentMessageService,
     CreateAgentMessageCommand,
@@ -31,6 +33,10 @@ def get_agent_message_repository(request: Request) -> AgentMessageRepository:
     return cast(AgentMessageRepository, request.app.state.agent_message_repository)
 
 
+def get_agent_executor(request: Request) -> AgentExecutor:
+    return cast(AgentExecutor, request.app.state.agent_executor)
+
+
 def get_agent_session_service(
     repository: Annotated[AgentSessionRepository, Depends(get_agent_session_repository)],
 ) -> AgentSessionService:
@@ -46,10 +52,12 @@ def get_agent_message_service(
         AgentMessageRepository,
         Depends(get_agent_message_repository),
     ],
+    agent_executor: Annotated[AgentExecutor, Depends(get_agent_executor)],
 ) -> AgentMessageService:
     return AgentMessageService(
         session_repository=session_repository,
         message_repository=message_repository,
+        agent_executor=agent_executor,
     )
 
 
@@ -72,9 +80,9 @@ async def create_agent_message(
     session_id: str,
     request: AgentMessageCreateRequest,
     service: Annotated[AgentMessageService, Depends(get_agent_message_service)],
-) -> AgentMessageResponse:
+) -> AgentMessageSendResponse:
     try:
-        message = service.create_user_message(
+        messages = service.send_user_message(
             CreateAgentMessageCommand(
                 session_id=session_id,
                 content=request.content,
@@ -86,7 +94,9 @@ async def create_agent_message(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Agent session not found",
         ) from exc
-    return AgentMessageResponse.model_validate(message)
+    return AgentMessageSendResponse(
+        messages=tuple(AgentMessageResponse.model_validate(message) for message in messages),
+    )
 
 
 @router.get("/{session_id}/messages")

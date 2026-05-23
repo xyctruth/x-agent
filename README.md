@@ -65,5 +65,5 @@ npm run dev
 - `GET /api/v1/service-info`：服务职责和支持的架构分层。
 - `POST /api/v1/agent-sessions`：创建 Agent 会话。
 - `GET /api/v1/agent-sessions/{session_id}`：查询 Agent 会话。
-- `POST /api/v1/agent-sessions/{session_id}/messages`：在会话下创建用户消息。
+- `POST /api/v1/agent-sessions/{session_id}/messages`：在会话下发送用户消息，并返回本次新增的 user/assistant 消息。
 - `GET /api/v1/agent-sessions/{session_id}/messages`：查询会话消息列表。

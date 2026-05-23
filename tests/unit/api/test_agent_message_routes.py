@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from x_agent.main import create_app
 
 
-def test_create_agent_message_returns_created_user_message() -> None:
+def test_create_agent_message_returns_created_user_and_assistant_messages() -> None:
     client = TestClient(create_app())
     session_id = client.post("/api/v1/agent-sessions", json={}).json()["id"]
 
@@ -17,12 +17,20 @@ def test_create_agent_message_returns_created_user_message() -> None:
 
     assert response.status_code == 201
     body = response.json()
-    assert body["id"]
-    assert body["session_id"] == session_id
-    assert body["role"] == "user"
-    assert body["content"] == "你好"
-    assert body["created_at"]
-    assert body["metadata"] == {"client": "web"}
+    messages = body["messages"]
+    assert len(messages) == 2
+    assert messages[0]["id"]
+    assert messages[0]["session_id"] == session_id
+    assert messages[0]["role"] == "user"
+    assert messages[0]["content"] == "你好"
+    assert messages[0]["created_at"]
+    assert messages[0]["metadata"] == {"client": "web"}
+    assert messages[1]["role"] == "assistant"
+    assert "你好" in messages[1]["content"]
+    assert messages[1]["metadata"] == {
+        "agent": "simple",
+        "mode": "deterministic",
+    }
 
 
 def test_list_agent_messages_returns_session_messages() -> None:
@@ -41,7 +49,16 @@ def test_list_agent_messages_returns_session_messages() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert [message["content"] for message in body] == ["第一条", "第二条"]
+    assert [message["role"] for message in body] == [
+        "user",
+        "assistant",
+        "user",
+        "assistant",
+    ]
+    assert body[0]["content"] == "第一条"
+    assert "第一条" in body[1]["content"]
+    assert body[2]["content"] == "第二条"
+    assert "第二条" in body[3]["content"]
 
 
 def test_create_agent_message_returns_404_when_session_missing() -> None:
