@@ -1,11 +1,20 @@
 from fastapi.testclient import TestClient
 
+from x_agent.agent.simple_agent import AgentReplyChunk
 from x_agent.application.llm import LLMProviderError
 from x_agent.main import create_app
 
 
 class FailingAgentExecutor:
     def execute(self, message: object) -> object:
+        raise LLMProviderError("provider unavailable")
+
+
+class StreamFailingAgentExecutor:
+    def execute(self, message: object) -> object:
+        raise LLMProviderError("provider unavailable")
+
+    def stream_execute(self, message: object) -> tuple[AgentReplyChunk, ...]:
         raise LLMProviderError("provider unavailable")
 
 
@@ -101,3 +110,52 @@ def test_create_agent_message_returns_502_when_agent_execution_fails() -> None:
 
     assert response.status_code == 502
     assert response.json() == {"detail": "Agent execution failed"}
+
+
+def test_stream_agent_message_returns_sse_events() -> None:
+    client = TestClient(create_app())
+    session_id = client.post("/api/v1/agent-sessions", json={}).json()["id"]
+
+    response = client.post(
+        f"/api/v1/agent-sessions/{session_id}/messages/stream",
+        json={"content": "你好"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    body = response.text
+    assert "event: user_message" in body
+    assert "event: assistant_delta" in body
+    assert "event: assistant_message" in body
+    assert "event: done" in body
+    assert '"role":"user"' in body
+    assert '"role":"assistant"' in body
+
+
+def test_stream_agent_message_returns_404_when_session_missing() -> None:
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/v1/agent-sessions/missing/messages/stream",
+        json={"content": "你好"},
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Agent session not found"}
+
+
+def test_stream_agent_message_returns_error_event_when_agent_execution_fails() -> None:
+    app = create_app()
+    app.state.agent_executor = StreamFailingAgentExecutor()
+    client = TestClient(app)
+    session_id = client.post("/api/v1/agent-sessions", json={}).json()["id"]
+
+    response = client.post(
+        f"/api/v1/agent-sessions/{session_id}/messages/stream",
+        json={"content": "你好"},
+    )
+
+    assert response.status_code == 200
+    assert "event: user_message" in response.text
+    assert "event: error" in response.text
+    assert '"detail": "Agent execution failed"' in response.text

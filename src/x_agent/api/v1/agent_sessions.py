@@ -1,6 +1,9 @@
+import json
+from collections.abc import Iterator
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 
 from x_agent.api.v1.schemas import (
     AgentMessageCreateRequest,
@@ -62,6 +65,10 @@ def get_agent_message_service(
     )
 
 
+def encode_sse_event(event: str, data: str) -> str:
+    return f"event: {event}\ndata: {data}\n\n"
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_agent_session(
     request: AgentSessionCreateRequest,
@@ -103,6 +110,58 @@ async def create_agent_message(
     return AgentMessageSendResponse(
         messages=tuple(AgentMessageResponse.model_validate(message) for message in messages),
     )
+
+
+@router.post("/{session_id}/messages/stream")
+async def stream_agent_message(
+    session_id: str,
+    request: AgentMessageCreateRequest,
+    service: Annotated[AgentMessageService, Depends(get_agent_message_service)],
+) -> StreamingResponse:
+    try:
+        service.list_messages(session_id)
+    except AgentSessionNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent session not found",
+        ) from exc
+
+    def event_stream() -> Iterator[str]:
+        try:
+            for stream_event in service.stream_user_message(
+                CreateAgentMessageCommand(
+                    session_id=session_id,
+                    content=request.content,
+                    metadata=request.metadata,
+                ),
+            ):
+                if stream_event.type == "assistant_delta":
+                    yield encode_sse_event(
+                        "assistant_delta",
+                        json.dumps(
+                            {"content": stream_event.content_delta},
+                            ensure_ascii=False,
+                        ),
+                    )
+                    continue
+
+                if stream_event.message is None:
+                    continue
+
+                yield encode_sse_event(
+                    stream_event.type,
+                    AgentMessageResponse.model_validate(
+                        stream_event.message,
+                    ).model_dump_json(),
+                )
+            yield encode_sse_event("done", "{}")
+        except LLMProviderError:
+            yield encode_sse_event(
+                "error",
+                json.dumps({"detail": "Agent execution failed"}),
+            )
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.get("/{session_id}/messages")

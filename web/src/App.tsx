@@ -3,8 +3,8 @@ import { FormEvent, useMemo, useState } from "react";
 import {
   AgentMessage,
   AgentSession,
-  createAgentMessage,
-  createAgentSession
+  createAgentSession,
+  streamAgentMessage
 } from "./api/client";
 
 function buildSessionTitle(content: string): string {
@@ -29,6 +29,48 @@ export function App() {
 
   const canSend = useMemo(() => draft.trim().length > 0 && !isSending, [draft, isSending]);
 
+  function appendAssistantDelta(sessionId: string, content: string) {
+    setMessages((currentMessages) => {
+      const streamingMessage = currentMessages.find((message) => message.id === "streaming-assistant");
+      if (streamingMessage) {
+        return currentMessages.map((message) =>
+          message.id === "streaming-assistant"
+            ? { ...message, content: `${message.content}${content}` }
+            : message
+        );
+      }
+
+      return [
+        ...currentMessages,
+        {
+          id: "streaming-assistant",
+          session_id: sessionId,
+          role: "assistant",
+          content,
+          created_at: new Date().toISOString(),
+          metadata: {
+            status: "streaming"
+          }
+        }
+      ];
+    });
+  }
+
+  function replaceStreamingAssistant(message: AgentMessage) {
+    setMessages((currentMessages) => {
+      const hasStreamingMessage = currentMessages.some(
+        (currentMessage) => currentMessage.id === "streaming-assistant"
+      );
+      if (!hasStreamingMessage) {
+        return [...currentMessages, message];
+      }
+
+      return currentMessages.map((currentMessage) =>
+        currentMessage.id === "streaming-assistant" ? message : currentMessage
+      );
+    });
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSend) {
@@ -46,8 +88,13 @@ export function App() {
         setSession(activeSession);
       }
 
-      const createdMessages = await createAgentMessage(activeSession.id, content);
-      setMessages((currentMessages) => [...currentMessages, ...createdMessages]);
+      await streamAgentMessage(activeSession.id, content, {
+        onUserMessage: (message) => {
+          setMessages((currentMessages) => [...currentMessages, message]);
+        },
+        onAssistantDelta: (contentDelta) => appendAssistantDelta(activeSession.id, contentDelta),
+        onAssistantMessage: replaceStreamingAssistant
+      });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "发送失败");
       setDraft(content);
@@ -92,11 +139,14 @@ export function App() {
           {messages.length === 0 ? (
             <div className="empty-state">
               <h2>开始一次 Agent 会话</h2>
-              <p>第一条消息会创建 session，并返回一条确定性的 assistant 回复。</p>
+              <p>第一条消息会创建 session，并实时展示 assistant 回复。</p>
             </div>
           ) : (
             messages.map((message) => (
-              <article className="message" key={message.id}>
+              <article
+                className={`message${message.metadata.status === "streaming" ? " message-streaming" : ""}`}
+                key={message.id}
+              >
                 <div className="message-meta">
                   <span>{message.role}</span>
                   <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>

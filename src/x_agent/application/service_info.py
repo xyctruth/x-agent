@@ -18,6 +18,7 @@ class ServiceInfoService:
                 "agent message management",
                 "agent execution",
                 "llm provider integration",
+                "streaming agent responses",
             ),
             layers=(
                 "client",

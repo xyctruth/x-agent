@@ -136,6 +136,11 @@ dd {
   background: #ffffff;
 }
 
+.message-streaming {
+  border-color: #8bd3c7;
+  box-shadow: 0 0 0 1px rgb(139 211 199 / 30%);
+}
+
 .message-meta {
   display: flex;
   justify-content: space-between;
@@ -231,4 +236,3 @@ dd {
     width: 100%;
   }
 }
-

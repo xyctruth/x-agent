@@ -29,6 +29,7 @@
 服务支持在 Agent 会话下发送和查询消息：
 
 - `POST /api/v1/agent-sessions/{session_id}/messages`：在指定会话下发送用户消息，并返回本次新增的 user/assistant 消息。
+- `POST /api/v1/agent-sessions/{session_id}/messages/stream`：在指定会话下发送用户消息，并通过 SSE 返回 `user_message`、`assistant_delta`、`assistant_message`、`done` 等流式事件。
 - `GET /api/v1/agent-sessions/{session_id}/messages`：查询指定会话的消息列表。
 
 当前版本支持两种 Agent 回复模式：
@@ -44,7 +45,7 @@
 
 - 使用 Vite、React 和 TypeScript 构建。
 - 默认通过 CORS 访问后端 API。
-- 当前版本支持创建 Agent 会话、发送用户消息、展示确定性 assistant 回复和查询消息列表。
+- 当前版本支持创建 Agent 会话、发送用户消息、流式展示 assistant 回复和查询消息列表。
 
 ## 规划职责
 
@@ -63,4 +64,5 @@
 - 使用 `X_AGENT_LLM_PROVIDER=qwen` 启用。
 - 使用 `X_AGENT_QWEN_API_KEY` 或 `DASHSCOPE_API_KEY` 提供 API Key。
 - 默认模型为 `qwen-plus`。
+- 同步回复使用 OpenAI 兼容 Chat Completions；流式回复使用同一接口的 `stream` 模式。
 - API Key 必须通过环境变量注入，不能写入代码、文档或提交历史。

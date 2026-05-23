@@ -92,6 +92,48 @@ def test_qwen_provider_raises_for_error_response() -> None:
         provider.complete((LLMMessage(role="user", content="你好"),))
 
 
+def test_qwen_provider_streams_openai_compatible_chunks() -> None:
+    captured_request: httpx.Request | None = None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal captured_request
+        captured_request = request
+        return httpx.Response(
+            200,
+            text=(
+                'data: {"model":"qwen-plus","choices":[{"delta":{"content":"你"}}]}\n\n'
+                'data: {"model":"qwen-plus","choices":[{"delta":{"content":"好"}}]}\n\n'
+                'data: {"model":"qwen-plus","choices":[],"usage":{"total_tokens":7}}\n\n'
+                "data: [DONE]\n\n"
+            ),
+        )
+
+    provider = QwenLLMProvider(
+        api_key="test-key",
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        model="qwen-plus",
+        timeout_seconds=30,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+
+    chunks = tuple(provider.stream_complete((LLMMessage(role="user", content="你是谁?"),)))
+
+    assert captured_request is not None
+    assert json.loads(captured_request.content) == {
+        "model": "qwen-plus",
+        "messages": [
+            {
+                "role": "user",
+                "content": "你是谁?",
+            },
+        ],
+        "stream": True,
+        "stream_options": {"include_usage": True},
+    }
+    assert [chunk.content_delta for chunk in chunks] == ["你", "好", ""]
+    assert chunks[-1].metadata == {"total_tokens": "7"}
+
+
 def test_qwen_provider_requires_api_key() -> None:
     with pytest.raises(ValueError, match="Qwen API key is required"):
         QwenLLMProvider(

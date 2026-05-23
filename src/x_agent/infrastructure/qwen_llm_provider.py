@@ -1,9 +1,17 @@
-from collections.abc import Mapping
+import json
+from collections.abc import Iterator, Mapping
 from typing import Any
 
 import httpx
 
-from x_agent.application.llm import LLMCompletion, LLMMessage, LLMProviderError
+from x_agent.application.llm import (
+    LLMCompletion,
+    LLMCompletionChunk,
+    LLMMessage,
+    LLMProviderError,
+)
+
+HTTP_ERROR_STATUS = 400
 
 
 class QwenLLMProvider:
@@ -29,20 +37,8 @@ class QwenLLMProvider:
         try:
             response = self._client.post(
                 f"{self._base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self._api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": self._model,
-                    "messages": [
-                        {
-                            "role": message.role,
-                            "content": message.content,
-                        }
-                        for message in messages
-                    ],
-                },
+                headers=self._headers(),
+                json=self._request_payload(messages),
             )
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
@@ -58,9 +54,67 @@ class QwenLLMProvider:
             metadata=self._extract_usage_metadata(payload),
         )
 
+    def stream_complete(
+        self,
+        messages: tuple[LLMMessage, ...],
+    ) -> Iterator[LLMCompletionChunk]:
+        try:
+            with self._client.stream(
+                "POST",
+                f"{self._base_url}/chat/completions",
+                headers=self._headers(),
+                json={
+                    **self._request_payload(messages),
+                    "stream": True,
+                    "stream_options": {"include_usage": True},
+                },
+            ) as response:
+                if response.status_code >= HTTP_ERROR_STATUS:
+                    response.read()
+                    response.raise_for_status()
+
+                for line in response.iter_lines():
+                    payload = self._parse_stream_line(line)
+                    if payload is None:
+                        continue
+
+                    content_delta = self._extract_delta_content(payload)
+                    metadata = self._extract_usage_metadata(payload)
+                    if not content_delta and not metadata:
+                        continue
+
+                    yield LLMCompletionChunk(
+                        content_delta=content_delta,
+                        provider="qwen",
+                        model=str(payload.get("model") or self._model),
+                        metadata=metadata,
+                    )
+        except httpx.HTTPStatusError as exc:
+            raise LLMProviderError(self._format_error_response(exc.response)) from exc
+        except httpx.HTTPError as exc:
+            raise LLMProviderError(f"Qwen stream request failed: {exc}") from exc
+
     def close(self) -> None:
         if self._owns_client:
             self._client.close()
+
+    def _headers(self) -> dict[str, str]:
+        return {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+        }
+
+    def _request_payload(self, messages: tuple[LLMMessage, ...]) -> dict[str, object]:
+        return {
+            "model": self._model,
+            "messages": [
+                {
+                    "role": message.role,
+                    "content": message.content,
+                }
+                for message in messages
+            ],
+        }
 
     def _extract_content(self, payload: Mapping[str, Any]) -> str:
         choices = payload.get("choices")
@@ -81,6 +135,22 @@ class QwenLLMProvider:
 
         return content
 
+    def _extract_delta_content(self, payload: Mapping[str, Any]) -> str:
+        choices = payload.get("choices")
+        if not isinstance(choices, list) or not choices:
+            return ""
+
+        first_choice = choices[0]
+        if not isinstance(first_choice, Mapping):
+            return ""
+
+        delta = first_choice.get("delta")
+        if not isinstance(delta, Mapping):
+            return ""
+
+        content = delta.get("content")
+        return content if isinstance(content, str) else ""
+
     def _extract_usage_metadata(self, payload: Mapping[str, Any]) -> dict[str, str]:
         usage = payload.get("usage")
         if not isinstance(usage, Mapping):
@@ -92,6 +162,25 @@ class QwenLLMProvider:
             if isinstance(value, int):
                 metadata[key] = str(value)
         return metadata
+
+    def _parse_stream_line(self, line: str) -> Mapping[str, Any] | None:
+        if not line:
+            return None
+        if not line.startswith("data:"):
+            return None
+
+        data = line.removeprefix("data:").strip()
+        if not data or data == "[DONE]":
+            return None
+
+        try:
+            payload = json.loads(data)
+        except json.JSONDecodeError as exc:
+            raise LLMProviderError("Qwen stream response line is invalid JSON") from exc
+
+        if not isinstance(payload, Mapping):
+            raise LLMProviderError("Qwen stream response line is invalid")
+        return payload
 
     def _format_error_response(self, response: httpx.Response) -> str:
         try:

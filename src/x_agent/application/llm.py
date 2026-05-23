@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
@@ -18,8 +19,21 @@ class LLMCompletion:
     metadata: dict[str, str] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class LLMCompletionChunk:
+    content_delta: str
+    provider: str
+    model: str
+    metadata: dict[str, str] = field(default_factory=dict)
+
+
 class LLMProvider(Protocol):
     def complete(self, messages: tuple[LLMMessage, ...]) -> LLMCompletion: ...
+
+    def stream_complete(
+        self,
+        messages: tuple[LLMMessage, ...],
+    ) -> Iterator[LLMCompletionChunk]: ...
 
 
 class LLMProviderError(Exception):
