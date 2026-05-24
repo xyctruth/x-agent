@@ -26,6 +26,9 @@ class InMemorySqlKnowledgeBase:
 
         return tuple(item for item in self._items if item.type in step.knowledge_types)
 
+    def list_items(self) -> tuple[SqlKnowledgeItem, ...]:
+        return self._items
+
     def _tokenize(self, query: str) -> tuple[str, ...]:
         normalized_query = query.lower()
         tokens = [

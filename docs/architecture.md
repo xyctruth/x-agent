@@ -38,6 +38,8 @@
 
 当前 NL2SQL 的 MySQL metadata 读取器属于 Infrastructure 层。它通过应用层定义的 `SqlKnowledgeBase` 端口向内提供表结构知识，具体的 PyMySQL 连接、`information_schema` 查询和 metadata 转换细节都留在系统边缘。
 
+NL2SQL 的向量知识库同样属于 Infrastructure 层。Qwen embedding provider 负责把文本转换为向量，Qdrant vector store 负责 collection、point upsert 和相似度检索。Application 层只通过 `EmbeddingProvider`、`VectorKnowledgeStore` 和 `SqlKnowledgeBase` 端口编排，不直接依赖 Qdrant 或 DashScope SDK。
+
 ## 依赖方向
 
 依赖应指向内层：

@@ -18,8 +18,8 @@ DROP TABLE IF EXISTS fact_orders;
 DROP TABLE IF EXISTS dim_products;
 DROP TABLE IF EXISTS dim_categories;
 DROP TABLE IF EXISTS dim_merchants;
-DROP TABLE IF EXISTS dim_regions;
 DROP TABLE IF EXISTS dim_users;
+DROP TABLE IF EXISTS dim_regions;
 
 CREATE TABLE dim_regions (
   id BIGINT PRIMARY KEY,

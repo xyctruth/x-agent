@@ -48,7 +48,8 @@
 - 当前版本只负责生成和校验 SQL，不执行真实业务数据库查询。
 - 默认从 MySQL `information_schema` 读取真实表结构、字段注释、外键和索引信息，并与静态指标、术语、样例知识组合检索。
 - 配置 `X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=memory` 后，可切回进程内静态知识库，方便无数据库环境临时运行。
-- 当前 MySQL metadata 接入用于增强生成上下文，不负责执行 SQL 查询或管理业务数据库连接池。
+- 配置 `X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=vector` 后，可使用 Qdrant 向量知识库召回上下文。向量库通过 `scripts/ingest_nl2sql_knowledge.py` 从 MySQL metadata 和静态业务知识构建，运行时按知识类型和 `X_AGENT_NL2SQL_VECTOR_SCORE_THRESHOLD` 过滤低相关召回。
+- 当前 MySQL metadata 和 Qdrant 向量知识库都用于增强生成上下文，不负责执行 SQL 查询或管理业务数据库连接池。
 
 ### Mock 业务数据库
 

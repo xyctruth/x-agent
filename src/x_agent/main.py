@@ -8,10 +8,13 @@ from x_agent.agent.nl2sql_agent import AgenticRagNl2SqlAgent
 from x_agent.agent.qwen_agent import QwenAgent
 from x_agent.agent.simple_agent import SimpleAgent
 from x_agent.api.v1.router import router as api_v1_router
+from x_agent.application.embeddings import EmbeddingProvider
 from x_agent.application.llm import LLMProvider
 from x_agent.application.nl2sql import Nl2SqlService
+from x_agent.application.nl2sql_knowledge_ingest import Nl2SqlKnowledgeIngestService
 from x_agent.core.config import Settings, get_settings
 from x_agent.core.logging import configure_logging
+from x_agent.domain.nl2sql import SqlKnowledgeItem
 from x_agent.execution.agent_executor import AgentExecutor
 from x_agent.infrastructure.composite_sql_knowledge_base import CompositeSqlKnowledgeBase
 from x_agent.infrastructure.in_memory_sql_knowledge_base import InMemorySqlKnowledgeBase
@@ -19,6 +22,14 @@ from x_agent.infrastructure.mysql_metadata_sql_knowledge_base import (
     MysqlConnectionConfig,
     MysqlMetadataSqlKnowledgeBase,
     PymysqlMysqlMetadataLoader,
+)
+from x_agent.infrastructure.qdrant_sql_knowledge_base import (
+    QdrantSqlKnowledgeBase,
+    QdrantVectorStore,
+)
+from x_agent.infrastructure.qwen_embedding_provider import (
+    QwenEmbeddingConfig,
+    QwenEmbeddingProvider,
 )
 from x_agent.infrastructure.qwen_llm_provider import QwenLLMProvider
 from x_agent.infrastructure.sql_validator import SqlglotSqlValidator
@@ -81,10 +92,17 @@ def create_nl2sql_service(settings: Settings) -> Nl2SqlService:
 
 def create_nl2sql_knowledge_base(
     settings: Settings,
-) -> InMemorySqlKnowledgeBase | CompositeSqlKnowledgeBase:
+) -> InMemorySqlKnowledgeBase | CompositeSqlKnowledgeBase | QdrantSqlKnowledgeBase:
     static_knowledge_base = InMemorySqlKnowledgeBase()
     if settings.nl2sql_knowledge_source == "memory":
         return static_knowledge_base
+    if settings.nl2sql_knowledge_source == "vector":
+        return QdrantSqlKnowledgeBase(
+            embedding_provider=create_embedding_provider(settings),
+            vector_store=create_qdrant_vector_store(settings),
+            top_k=settings.nl2sql_vector_top_k,
+            score_threshold=settings.nl2sql_vector_score_threshold,
+        )
 
     mysql_knowledge_base = MysqlMetadataSqlKnowledgeBase(
         loader=PymysqlMysqlMetadataLoader(
@@ -103,6 +121,64 @@ def create_nl2sql_knowledge_base(
             mysql_knowledge_base,
             static_knowledge_base,
         ),
+    )
+
+
+def create_nl2sql_knowledge_ingest_service(settings: Settings) -> Nl2SqlKnowledgeIngestService:
+    return Nl2SqlKnowledgeIngestService(
+        embedding_provider=create_embedding_provider(settings),
+        vector_store=create_qdrant_vector_store(settings),
+        vector_size=settings.embedding_dimensions,
+    )
+
+
+def create_nl2sql_knowledge_items(settings: Settings) -> tuple[SqlKnowledgeItem, ...]:
+    static_knowledge_base = InMemorySqlKnowledgeBase()
+    mysql_knowledge_base = MysqlMetadataSqlKnowledgeBase(
+        loader=PymysqlMysqlMetadataLoader(
+            config=MysqlConnectionConfig(
+                host=settings.mysql_host,
+                port=settings.mysql_port,
+                user=settings.mysql_user,
+                password=settings.mysql_password,
+                database=settings.mysql_database,
+                connect_timeout_seconds=settings.mysql_connect_timeout_seconds,
+            ),
+        ),
+    )
+    items_by_id = {
+        item.id: item
+        for item in (
+            *mysql_knowledge_base.list_items(),
+            *static_knowledge_base.list_items(),
+        )
+    }
+    return tuple(items_by_id.values())
+
+
+def create_embedding_provider(settings: Settings) -> EmbeddingProvider:
+    if settings.embedding_provider != "qwen":
+        raise RuntimeError("Unsupported embedding provider")
+    if settings.qwen_api_key is None:
+        raise RuntimeError(
+            "Qwen embedding provider requires X_AGENT_QWEN_API_KEY or DASHSCOPE_API_KEY",
+        )
+    return QwenEmbeddingProvider(
+        config=QwenEmbeddingConfig(
+            api_key=settings.qwen_api_key,
+            base_url=settings.qwen_base_url,
+            model=settings.qwen_embedding_model,
+            dimensions=settings.embedding_dimensions,
+            timeout_seconds=settings.qwen_timeout_seconds,
+        ),
+    )
+
+
+def create_qdrant_vector_store(settings: Settings) -> QdrantVectorStore:
+    return QdrantVectorStore(
+        url=settings.qdrant_url,
+        collection_name=settings.qdrant_collection,
+        timeout_seconds=settings.qdrant_timeout_seconds,
     )
 
 

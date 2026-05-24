@@ -34,6 +34,7 @@ x_agent_mock_biz
 默认连接本地 Docker MySQL：
 
 ```bash
+make start-mysql
 bash scripts/init_mock_mysql.sh
 ```
 
@@ -52,6 +53,14 @@ MYSQL_DATABASE=x_agent_mock_biz
 ```bash
 MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD=root bash scripts/init_mock_mysql.sh
 ```
+
+如果希望一条命令启动本地 MySQL、Qdrant 并初始化 mock 数据，可以在项目根目录执行：
+
+```bash
+make up
+```
+
+MySQL Docker 数据默认挂载到 `.data/mysql`。
 
 ## 验证 SQL
 

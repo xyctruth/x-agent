@@ -233,6 +233,9 @@ class MysqlMetadataSqlKnowledgeBase:
         ]
         return tuple(matched_items) if matched_items else self._load_items()
 
+    def list_items(self) -> tuple[SqlKnowledgeItem, ...]:
+        return self._load_items()
+
     def _load_items(self) -> tuple[SqlKnowledgeItem, ...]:
         if self._items is None:
             self._items = tuple(self._table_to_item(table) for table in self._loader.load_tables())

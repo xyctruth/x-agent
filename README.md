@@ -27,6 +27,12 @@
 uv sync --extra dev
 ```
 
+也可以使用 Makefile：
+
+```bash
+make sync
+```
+
 启动服务：
 
 ```bash
@@ -46,6 +52,12 @@ uv run ruff format --check .
 uv run ruff check .
 uv run mypy src tests
 uv run pytest
+```
+
+或：
+
+```bash
+make check
 ```
 
 启动前端：
@@ -81,10 +93,17 @@ export DASHSCOPE_API_KEY="你的百炼 API Key"
 项目提供本地 MySQL 8.0 mock 业务库，用于测试自然语言转统计 SQL、后续只读 SQL 执行和数据分析能力：
 
 ```bash
+make start-mysql
 bash scripts/init_mock_mysql.sh
 ```
 
-默认连接 `127.0.0.1:3306`，用户和密码均为 `root`，数据库名为 `x_agent_mock_biz`。可以通过 `MYSQL_HOST`、`MYSQL_PORT`、`MYSQL_USER`、`MYSQL_PASSWORD`、`MYSQL_DATABASE` 环境变量覆盖。
+默认连接 `127.0.0.1:3306`，用户和密码均为 `root`，数据库名为 `x_agent_mock_biz`。MySQL Docker 数据挂载到 `.data/mysql`。可以通过 `MYSQL_HOST`、`MYSQL_PORT`、`MYSQL_USER`、`MYSQL_PASSWORD`、`MYSQL_DATABASE` 环境变量覆盖。
+
+一条命令启动 MySQL、Qdrant 并初始化 mock 业务库：
+
+```bash
+make up
+```
 
 ### 启用 NL2SQL MySQL metadata 检索
 
@@ -107,6 +126,28 @@ uv run fastapi dev src/x_agent/main.py
 ```bash
 export X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=memory
 ```
+
+### 启用 NL2SQL 向量知识库
+
+向量模式使用 Qdrant 存储知识向量，使用千问 `text-embedding-v4` 生成 embedding：
+
+```bash
+make start-qdrant
+
+export X_AGENT_QWEN_API_KEY="你的百炼 API Key"
+export X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=vector
+export X_AGENT_EMBEDDING_PROVIDER=qwen
+export X_AGENT_QWEN_EMBEDDING_MODEL=text-embedding-v4
+export X_AGENT_EMBEDDING_DIMENSIONS=1024
+export X_AGENT_QDRANT_URL=http://127.0.0.1:6333
+export X_AGENT_QDRANT_COLLECTION=nl2sql_knowledge
+export X_AGENT_NL2SQL_VECTOR_SCORE_THRESHOLD=0.5
+
+make ingest-nl2sql
+uv run fastapi dev src/x_agent/main.py
+```
+
+Qdrant Docker 数据挂载到 `.data/qdrant`。ingest 脚本会读取 MySQL metadata 和静态业务知识，生成向量后写入 Qdrant collection。服务运行时会对用户问题生成 query embedding，再按检索计划中的知识类型和相似度阈值从 Qdrant 召回相似知识。
 
 ## 当前 API
 

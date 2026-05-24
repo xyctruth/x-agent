@@ -136,6 +136,10 @@ celerybeat.pid
 *.aof
 *.pid
 
+# Local vector database data
+.data/
+qdrant_storage/
+
 # RabbitMQ
 mnesia/
 rabbitmq/
