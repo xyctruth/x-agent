@@ -9,6 +9,28 @@
 - 行为、职责或架构变化必须同步更新对应文档。
 - 项目文档和代码注释优先使用中文；标识符、API 字段、日志字段和错误码使用英文。
 
+## Superpowers 集成
+
+如果当前 Codex 环境安装了 Superpowers 插件，可以把 Superpowers 作为通用工程技能层使用，但不能覆盖本项目规则。
+
+优先级固定为：
+
+```text
+用户明确要求 > AGENTS.md > docs/* > Superpowers skills > 默认模型习惯
+```
+
+使用场景：
+
+- 复杂需求澄清、方案探索：参考 `brainstorming`。
+- 大功能拆解和计划文档：参考 `writing-plans`。
+- 执行已确认计划：参考 `executing-plans`。
+- Bug 排查：参考 `systematic-debugging`。
+- 高风险逻辑或核心算法：参考 `test-driven-development`。
+- 完成前验证：参考 `verification-before-completion`。
+- 请求或处理代码评审：参考 `requesting-code-review`、`receiving-code-review`。
+
+Superpowers 只决定“怎么更好地工作”，本项目仍必须遵守“先方案、用户确认后编码、质量检查、自 review、更新职责文档、用户 review 后 commit”的流程。
+
 ## 按需读取项目知识
 
 Codex 按需读取 `docs/`，不默认全量读取所有文档。
@@ -27,4 +49,5 @@ Codex 按需读取 `docs/`，不默认全量读取所有文档。
 - `docs/architecture.md`：分层架构、依赖方向和架构边界。
 - `docs/development-workflow.md`：研发流程、质量检查、测试和自 review 规则。
 - `docs/service-responsibilities.md`：当前服务职责、规划职责和业务边界。
+- `docs/workflows/superpowers-integration.md`：Superpowers 与本项目流程的集成规则。
 - `docs/adr/`：重要架构决策记录。
