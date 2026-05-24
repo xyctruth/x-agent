@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     qwen_model: str = "qwen-plus"
     qwen_timeout_seconds: float = 30.0
+    nl2sql_knowledge_source: str = "mysql"
+    mysql_host: str = "127.0.0.1"
+    mysql_port: int = 3306
+    mysql_user: str = "root"
+    mysql_password: str = Field(default="root", repr=False)
+    mysql_database: str = "x_agent_mock_biz"
+    mysql_connect_timeout_seconds: float = 3.0
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -37,6 +44,14 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_llm_provider(cls, value: str) -> str:
         return value.strip().lower()
+
+    @field_validator("nl2sql_knowledge_source")
+    @classmethod
+    def normalize_nl2sql_knowledge_source(cls, value: str) -> str:
+        normalized_value = value.strip().lower()
+        if normalized_value not in {"memory", "mysql"}:
+            raise ValueError("nl2sql_knowledge_source must be memory or mysql")
+        return normalized_value
 
 
 @lru_cache

@@ -46,7 +46,9 @@
 - `POST /api/v1/nl2sql/generate`：接收自然语言问题，返回检索计划、召回的业务知识、生成 SQL 和 SQL 校验结果。
 - Agent 会按需检索表结构、指标定义、业务术语和历史相似查询样例，构建增强上下文。
 - 当前版本只负责生成和校验 SQL，不执行真实业务数据库查询。
-- 第一版使用进程内 demo 知识库，后续可替换为数据字典、向量检索、历史查询样本库或真实数据库 metadata。
+- 默认从 MySQL `information_schema` 读取真实表结构、字段注释、外键和索引信息，并与静态指标、术语、样例知识组合检索。
+- 配置 `X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=memory` 后，可切回进程内静态知识库，方便无数据库环境临时运行。
+- 当前 MySQL metadata 接入用于增强生成上下文，不负责执行 SQL 查询或管理业务数据库连接池。
 
 ### Mock 业务数据库
 
@@ -56,6 +58,7 @@
 - 当前包含用户、商户、商品、订单、支付、退款、行为、风控画像、风控规则命中和风控案件等 16 张表。
 - 初始化脚本位于 `scripts/init_mock_mysql.sh`。
 - 数据库脚本位于 `database/mock_mysql/`。
+- NL2SQL MySQL metadata 检索默认读取该库的表、字段、索引和外键。
 
 ### Web Client
 

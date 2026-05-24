@@ -46,14 +46,14 @@ def test_nl2sql_agent_generates_deterministic_order_payment_sql() -> None:
     )
 
     assert "COUNT(DISTINCT o.id)" in generated.sql
-    assert "LEFT JOIN payments" in generated.sql
+    assert "LEFT JOIN fact_payments" in generated.sql
     assert generated.assumptions
 
 
 def test_nl2sql_agent_generates_sql_with_llm_provider() -> None:
     provider = FakeLLMProvider(
         content=(
-            '{"sql":"SELECT COUNT(*) AS order_count FROM orders",'
+            '{"sql":"SELECT COUNT(*) AS order_count FROM fact_orders",'
             '"explanation":"统计订单数","assumptions":["使用 orders 表"]}'
         ),
     )
@@ -66,13 +66,13 @@ def test_nl2sql_agent_generates_sql_with_llm_provider() -> None:
                 id="table:orders",
                 type="table",
                 name="订单表",
-                content="orders(id)",
-                metadata={"table_name": "orders"},
+                content="fact_orders(id)",
+                metadata={"table_name": "fact_orders"},
             ),
         ),
     )
 
     assert provider.messages[0].role == "system"
     assert "统计订单数" in provider.messages[1].content
-    assert generated.sql == "SELECT COUNT(*) AS order_count FROM orders"
+    assert generated.sql == "SELECT COUNT(*) AS order_count FROM fact_orders"
     assert generated.assumptions == ("使用 orders 表",)

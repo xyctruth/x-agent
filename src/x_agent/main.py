@@ -13,7 +13,13 @@ from x_agent.application.nl2sql import Nl2SqlService
 from x_agent.core.config import Settings, get_settings
 from x_agent.core.logging import configure_logging
 from x_agent.execution.agent_executor import AgentExecutor
+from x_agent.infrastructure.composite_sql_knowledge_base import CompositeSqlKnowledgeBase
 from x_agent.infrastructure.in_memory_sql_knowledge_base import InMemorySqlKnowledgeBase
+from x_agent.infrastructure.mysql_metadata_sql_knowledge_base import (
+    MysqlConnectionConfig,
+    MysqlMetadataSqlKnowledgeBase,
+    PymysqlMysqlMetadataLoader,
+)
 from x_agent.infrastructure.qwen_llm_provider import QwenLLMProvider
 from x_agent.infrastructure.sql_validator import SqlglotSqlValidator
 from x_agent.persistence.in_memory_agent_message_repository import (
@@ -68,8 +74,35 @@ def create_agent_executor(settings: Settings) -> AgentExecutor:
 def create_nl2sql_service(settings: Settings) -> Nl2SqlService:
     return Nl2SqlService(
         agent=AgenticRagNl2SqlAgent(llm_provider=create_llm_provider(settings)),
-        knowledge_base=InMemorySqlKnowledgeBase(),
+        knowledge_base=create_nl2sql_knowledge_base(settings),
         validator=SqlglotSqlValidator(),
+    )
+
+
+def create_nl2sql_knowledge_base(
+    settings: Settings,
+) -> InMemorySqlKnowledgeBase | CompositeSqlKnowledgeBase:
+    static_knowledge_base = InMemorySqlKnowledgeBase()
+    if settings.nl2sql_knowledge_source == "memory":
+        return static_knowledge_base
+
+    mysql_knowledge_base = MysqlMetadataSqlKnowledgeBase(
+        loader=PymysqlMysqlMetadataLoader(
+            config=MysqlConnectionConfig(
+                host=settings.mysql_host,
+                port=settings.mysql_port,
+                user=settings.mysql_user,
+                password=settings.mysql_password,
+                database=settings.mysql_database,
+                connect_timeout_seconds=settings.mysql_connect_timeout_seconds,
+            ),
+        ),
+    )
+    return CompositeSqlKnowledgeBase(
+        knowledge_bases=(
+            mysql_knowledge_base,
+            static_knowledge_base,
+        ),
     )
 
 

@@ -24,7 +24,7 @@ class FakeNl2SqlAgent:
         context: tuple[SqlKnowledgeItem, ...],
     ) -> GeneratedSql:
         return GeneratedSql(
-            sql="SELECT COUNT(*) AS order_count FROM orders",
+            sql="SELECT COUNT(*) AS order_count FROM fact_orders",
             explanation="统计订单数",
         )
 
@@ -36,8 +36,8 @@ class FakeKnowledgeBase:
                 id="table:orders",
                 type="table",
                 name="订单表",
-                content="orders(id, created_at)",
-                metadata={"table_name": "orders"},
+                content="fact_orders(id, created_at)",
+                metadata={"table_name": "fact_orders"},
             ),
         )
 
@@ -66,7 +66,7 @@ def test_nl2sql_service_orchestrates_retrieval_generation_and_validation() -> No
 
     assert result.question == "统计订单数"
     assert result.retrieval_plan[0].reason == "检索表结构"
-    assert result.retrieved_context[0].metadata == {"table_name": "orders"}
-    assert result.generated_sql.sql == "SELECT COUNT(*) AS order_count FROM orders"
+    assert result.retrieved_context[0].metadata == {"table_name": "fact_orders"}
+    assert result.generated_sql.sql == "SELECT COUNT(*) AS order_count FROM fact_orders"
     assert result.validation.is_valid is True
-    assert result.validation.referenced_tables == ("orders",)
+    assert result.validation.referenced_tables == ("fact_orders",)

@@ -75,3 +75,18 @@ JOIN fact_orders o ON o.user_id = rup.user_id
 LEFT JOIN fact_payments p ON p.order_id = o.id AND p.payment_status = 'paid'
 GROUP BY rup.risk_level;
 ```
+
+## NL2SQL metadata 检索
+
+后端服务可以通过以下配置让 NL2SQL 从该库读取真实 metadata：
+
+```bash
+export X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=mysql
+export X_AGENT_MYSQL_HOST=127.0.0.1
+export X_AGENT_MYSQL_PORT=3306
+export X_AGENT_MYSQL_USER=root
+export X_AGENT_MYSQL_PASSWORD=root
+export X_AGENT_MYSQL_DATABASE=x_agent_mock_biz
+```
+
+服务会读取 `information_schema.TABLES`、`COLUMNS`、`KEY_COLUMN_USAGE` 和 `STATISTICS`，生成可被 Agentic RAG 检索的表结构上下文。

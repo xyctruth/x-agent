@@ -83,8 +83,9 @@ class AgenticRagNl2SqlAgent:
                     "SELECT DATE(o.created_at) AS stat_date, "
                     "COUNT(DISTINCT o.id) AS order_count, "
                     "COALESCE(SUM(p.amount), 0) AS paid_amount "
-                    "FROM orders o "
-                    "LEFT JOIN payments p ON p.order_id = o.id AND p.status = 'paid' "
+                    "FROM fact_orders o "
+                    "LEFT JOIN fact_payments p ON p.order_id = o.id "
+                    "AND p.payment_status = 'paid' "
                     "WHERE o.created_at >= CURRENT_DATE - INTERVAL '7' DAY "
                     "GROUP BY DATE(o.created_at) "
                     "ORDER BY stat_date"
@@ -96,13 +97,13 @@ class AgenticRagNl2SqlAgent:
         if "用户" in question:
             return GeneratedSql(
                 sql=(
-                    "SELECT u.risk_level, COUNT(*) AS user_count "
-                    "FROM users u "
-                    "GROUP BY u.risk_level "
+                    "SELECT rup.risk_level, COUNT(*) AS user_count "
+                    "FROM risk_user_profiles rup "
+                    "GROUP BY rup.risk_level "
                     "ORDER BY user_count DESC"
                 ),
                 explanation="按用户风险等级聚合用户数量。",
-                assumptions=("用户风险等级来自 users.risk_level 字段。",),
+                assumptions=("用户风险等级来自 risk_user_profiles.risk_level 字段。",),
             )
 
         table_names = {
@@ -110,11 +111,15 @@ class AgenticRagNl2SqlAgent:
             for item in context
             if item.type == "table" and "table_name" in item.metadata
         }
-        table_name = "users" if "users" in table_names and "orders" not in table_names else "orders"
+        table_name = (
+            "dim_users"
+            if "dim_users" in table_names and "fact_orders" not in table_names
+            else "fact_orders"
+        )
         sql = (
-            "SELECT COUNT(*) AS row_count FROM users"
-            if table_name == "users"
-            else "SELECT COUNT(*) AS row_count FROM orders"
+            "SELECT COUNT(*) AS row_count FROM dim_users"
+            if table_name == "dim_users"
+            else "SELECT COUNT(*) AS row_count FROM fact_orders"
         )
         return GeneratedSql(
             sql=sql,

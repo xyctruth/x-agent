@@ -86,6 +86,28 @@ bash scripts/init_mock_mysql.sh
 
 默认连接 `127.0.0.1:3306`，用户和密码均为 `root`，数据库名为 `x_agent_mock_biz`。可以通过 `MYSQL_HOST`、`MYSQL_PORT`、`MYSQL_USER`、`MYSQL_PASSWORD`、`MYSQL_DATABASE` 环境变量覆盖。
 
+### 启用 NL2SQL MySQL metadata 检索
+
+NL2SQL 默认从本地 mock MySQL 的 `information_schema` 读取真实表结构、字段注释、外键和索引信息：
+
+```bash
+export X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=mysql
+export X_AGENT_MYSQL_HOST=127.0.0.1
+export X_AGENT_MYSQL_PORT=3306
+export X_AGENT_MYSQL_USER=root
+export X_AGENT_MYSQL_PASSWORD=root
+export X_AGENT_MYSQL_DATABASE=x_agent_mock_biz
+uv run fastapi dev src/x_agent/main.py
+```
+
+启用后，服务会组合使用 MySQL metadata 和静态业务知识。MySQL metadata 负责真实表结构，静态知识库继续提供指标定义、业务术语和历史 SQL 样例。
+
+如果需要在无数据库环境下临时运行，可以切回进程内静态知识库：
+
+```bash
+export X_AGENT_NL2SQL_KNOWLEDGE_SOURCE=memory
+```
+
 ## 当前 API
 
 - `GET /healthz`：存活检查和基础服务元数据。

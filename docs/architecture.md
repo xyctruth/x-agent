@@ -36,6 +36,8 @@
 
 包含外部系统适配器：LLM Provider、数据库客户端、Redis、消息队列、对象存储、指标、链路追踪和日志。
 
+当前 NL2SQL 的 MySQL metadata 读取器属于 Infrastructure 层。它通过应用层定义的 `SqlKnowledgeBase` 端口向内提供表结构知识，具体的 PyMySQL 连接、`information_schema` 查询和 metadata 转换细节都留在系统边缘。
+
 ## 依赖方向
 
 依赖应指向内层：

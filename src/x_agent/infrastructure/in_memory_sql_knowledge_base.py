@@ -54,51 +54,73 @@ class InMemorySqlKnowledgeBase:
 def default_sql_knowledge_items() -> tuple[SqlKnowledgeItem, ...]:
     return (
         SqlKnowledgeItem(
-            id="table:orders",
+            id="table:fact_orders",
             type="table",
             name="订单表",
             content=(
-                "orders(id, user_id, status, total_amount, created_at)。"
-                "记录用户下单事实, created_at 为订单创建时间, total_amount 为订单应付金额。"
+                "fact_orders(id, user_id, merchant_id, region_id, order_status, "
+                "total_amount, discount_amount, payable_amount, created_at, paid_at)。"
+                "记录订单主数据, created_at 为下单时间, payable_amount 为实际应付金额。"
             ),
-            metadata={"table_name": "orders", "primary_key": "id"},
+            metadata={"table_name": "fact_orders", "primary_key": "id"},
         ),
         SqlKnowledgeItem(
-            id="table:payments",
+            id="table:fact_payments",
             type="table",
             name="支付表",
             content=(
-                "payments(id, order_id, amount, status, paid_at)。"
-                "记录订单支付流水, status='paid' 表示支付成功, amount 为实际支付金额。"
+                "fact_payments(id, order_id, user_id, channel, payment_status, amount, paid_at)。"
+                "记录订单支付流水, payment_status='paid' 表示支付成功, amount 为实际支付金额。"
             ),
-            metadata={"table_name": "payments", "primary_key": "id"},
+            metadata={"table_name": "fact_payments", "primary_key": "id"},
         ),
         SqlKnowledgeItem(
-            id="table:users",
+            id="table:dim_users",
             type="table",
             name="用户表",
             content=(
-                "users(id, registered_at, risk_level, city)。"
-                "记录用户基础信息, risk_level 表示风控风险等级。"
+                "dim_users(id, user_no, region_id, gender, age, registered_at, status)。"
+                "记录用户基础信息, 可通过 region_id 关联 dim_regions.id。"
             ),
-            metadata={"table_name": "users", "primary_key": "id"},
+            metadata={"table_name": "dim_users", "primary_key": "id"},
         ),
         SqlKnowledgeItem(
-            id="table:order_items",
+            id="table:fact_order_items",
             type="table",
             name="订单明细表",
             content=(
-                "order_items(id, order_id, product_id, quantity, item_amount)。"
-                "记录订单商品明细, 可通过 order_id 关联 orders.id。"
+                "fact_order_items(id, order_id, product_id, quantity, item_amount)。"
+                "记录订单商品明细, 可通过 order_id 关联 fact_orders.id。"
             ),
-            metadata={"table_name": "order_items", "primary_key": "id"},
+            metadata={"table_name": "fact_order_items", "primary_key": "id"},
+        ),
+        SqlKnowledgeItem(
+            id="table:risk_user_profiles",
+            type="table",
+            name="用户风控画像表",
+            content=(
+                "risk_user_profiles(user_id, risk_level, risk_score, is_blacklisted, "
+                "last_evaluated_at)。记录用户风险分层, 可通过 user_id 关联 dim_users.id。"
+            ),
+            metadata={"table_name": "risk_user_profiles", "primary_key": "user_id"},
+        ),
+        SqlKnowledgeItem(
+            id="table:dim_regions",
+            type="table",
+            name="区域维表",
+            content=(
+                "dim_regions(id, region_code, region_name, province, city, tier)。"
+                "支持城市维度统计。"
+            ),
+            metadata={"table_name": "dim_regions", "primary_key": "id"},
         ),
         SqlKnowledgeItem(
             id="metric:order_count",
             type="metric",
             name="订单数",
             content=(
-                "订单数使用 COUNT(DISTINCT orders.id) 计算, 统计周期通常基于 orders.created_at。"
+                "订单数使用 COUNT(DISTINCT fact_orders.id) 计算, "
+                "统计周期通常基于 fact_orders.created_at。"
             ),
         ),
         SqlKnowledgeItem(
@@ -106,7 +128,8 @@ def default_sql_knowledge_items() -> tuple[SqlKnowledgeItem, ...]:
             type="metric",
             name="支付金额",
             content=(
-                "支付金额使用 SUM(payments.amount) 计算, 仅统计 payments.status='paid' 的支付记录。"
+                "支付金额使用 SUM(fact_payments.amount) 计算, "
+                "仅统计 fact_payments.payment_status='paid' 的支付记录。"
             ),
         ),
         SqlKnowledgeItem(
@@ -119,7 +142,9 @@ def default_sql_knowledge_items() -> tuple[SqlKnowledgeItem, ...]:
             id="term:risk_level",
             type="term",
             name="风险等级",
-            content="风险等级来自 users.risk_level, 常见取值为 low、medium、high。",
+            content=(
+                "用户风险等级来自 risk_user_profiles.risk_level, 常见取值为 low、medium、high。"
+            ),
         ),
         SqlKnowledgeItem(
             id="example:daily_order_paid_amount",
@@ -129,8 +154,9 @@ def default_sql_knowledge_items() -> tuple[SqlKnowledgeItem, ...]:
                 "SELECT DATE(o.created_at) AS stat_date, "
                 "COUNT(DISTINCT o.id) AS order_count, "
                 "COALESCE(SUM(p.amount), 0) AS paid_amount "
-                "FROM orders o "
-                "LEFT JOIN payments p ON p.order_id = o.id AND p.status = 'paid' "
+                "FROM fact_orders o "
+                "LEFT JOIN fact_payments p ON p.order_id = o.id "
+                "AND p.payment_status = 'paid' "
                 "GROUP BY DATE(o.created_at)"
             ),
         ),

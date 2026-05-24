@@ -14,7 +14,7 @@ def test_in_memory_sql_knowledge_base_searches_relevant_tables() -> None:
     )
 
     table_names = {item.metadata.get("table_name") for item in items}
-    assert "payments" in table_names
+    assert "fact_payments" in table_names
 
 
 def test_in_memory_sql_knowledge_base_falls_back_by_type() -> None:
